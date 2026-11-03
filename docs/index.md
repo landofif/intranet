@@ -30,7 +30,7 @@ intranet.tam.ch sends no CORS headers, so a GitHub Pages site can't read it dire
 1. `npm install` (gets Wrangler), `npx wrangler login`. In a shell without nvm (luna's kitty) there is no `npx`; use `./node_modules/.bin/wrangler …` instead. Wrangler hides typed secrets; to see what you type: `read -P "Wert: " v; printf '%s' $v | ./node_modules/.bin/wrangler secret put NAME --config worker/wrangler.jsonc; set -e v`.
 2. In `worker/`: `npx wrangler secret put KZN_USER`, `… KZN_PASSWORD`, `… APP_KEY` (a long random string).
 3. `npm run deploy` → note the `*.workers.dev` URL.
-4. Push to GitHub, enable Pages (branch `main`, root). Open the Pages URL in Safari, enter Worker URL + key in ⚙, then Share → Add to Home Screen. If the home-screen app opens on settings anyway, enter them there once (it may keep its own storage).
+4. Push to GitHub, enable Pages (branch `main`, root). Live: repo `landofif/intranet` → https://landofif.github.io/intranet/, Worker https://kzn-intranet.kzn-intranet.workers.dev. Open the Pages URL in Safari, enter Worker URL + key in ⚙, then Share → Add to Home Screen. If the home-screen app opens on settings anyway, enter them there once (it may keep its own storage).
 
 Local dev: put the three secrets in `worker/.dev.vars` (gitignored) and run `npm run dev`.
 
