@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>KZN</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="KZN">
+  <meta name="theme-color" content="#f4f5f8" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#111318" media="(prefers-color-scheme: dark)">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <button id="prev" class="icon" aria-label="Zurück">‹</button>
+    <h1 id="title">KZN</h1>
+    <button id="next" class="icon" aria-label="Weiter">›</button>
+    <button id="settings" class="icon" aria-label="Einstellungen">⚙</button>
+  </header>
+  <nav id="days"></nav>
+  <main id="main"></main>
+  <footer id="tabs">
+    <button data-view="timetable">Stundenplan</button>
+    <button data-view="grades">Noten</button>
+    <button data-view="absences">Absenzen</button>
+    <button data-view="exams">Prüfungen</button>
+    <button data-view="homework">Aufgaben</button>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "kzn-intranet",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true }
+  // Secrets (set with `npx wrangler secret put <NAME>` from this folder):
+  //   KZN_USER, KZN_PASSWORD, APP_KEY
+}
