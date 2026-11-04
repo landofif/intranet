@@ -5,6 +5,22 @@ const DAY_MS = 864e5;
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const LISTS = { absences: 'Absenzen', exams: 'Prüfungen', homework: 'Hausaufgaben' };
 const BADGES = { cancel: 'Ausfall', rmchg: 'Zimmerwechsel' };
+// Timetable names; a subject not listed here keeps its full name.
+const SUBJECT_SHORT = {
+  'Bildnerisches Gestalten': 'BG',
+  Biologie: 'Bio',
+  Deutsch: 'D',
+  'Einführung in Wirtschaft und Recht': 'EWR',
+  Englisch: 'E',
+  Französisch: 'F',
+  Geschichte: 'G',
+  Informatik: 'I',
+  'Informations- und Kommunikationstechnologie': 'ICT',
+  Klassenstunde: 'K',
+  Mathematik: 'M',
+  Sport: 'S',
+  'Wirtschaft und Recht': 'WR',
+};
 const THEMES = { auto: 'Automatisch', light: 'Hell', dark: 'Dunkel' };
 const THEME_COLORS = { light: '#f4f5f8', dark: '#111318' };
 
@@ -145,7 +161,7 @@ function renderDay(lessons) {
         return `<div class="card lesson ${esc(l.type)}${isNow ? ' now' : ''}">
           <div class="time"><b>${l.start}</b>${l.end}</div>
           <div class="what">
-            <div class="subject">${esc(l.subject)}</div>
+            <div class="subject">${esc(SUBJECT_SHORT[l.subject] ?? l.subject)}</div>
             <div class="meta">${room}${l.teacher ? ' · ' + esc(l.teacher) : ''}${l.message ? ' · ' + esc(l.message) : ''}</div>
           </div>${badge}
         </div>`;
