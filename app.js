@@ -212,7 +212,7 @@ async function showGrades() {
             <span class="v">${esc(g.value ?? '–')}</span></div>`)
         .join('');
       const summary = c.summary
-        .filter((s) => s.title !== 'Schnitt' && s.value != null)
+        .filter((s) => s.value != null)
         .map((s) => `<div class="grade"><span class="t">${esc(s.title)}</span><span class="v">${esc(s.value)}</span></div>`)
         .join('');
       return `<details class="card course"><summary><span class="name">${esc(c.name)}</span>${avg}</summary>${grades || '<div class="grade"><span class="t d">Noch keine Noten</span></div>'}${summary}</details>`;

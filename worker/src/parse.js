@@ -20,6 +20,17 @@ export function isLoginPage(text) {
   return text.includes('name="loginpassword"');
 }
 
+// The reason a page gives for refusing a login. The login page always carries
+// hidden notices about JavaScript, cookies and old browsers, so those are skipped.
+export function extractNotice(text) {
+  const blocks = text.matchAll(/class="[^"]*\b(?:status-message|alert|error)\b[^"]*"[^>]*>([\s\S]*?)<\/(?:div|p)>/g);
+  for (const [, inner] of blocks) {
+    const notice = inner.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (notice && !/JavaScript wird|Cookies m|Diese Applikation kann/.test(notice)) return notice.slice(0, 120);
+  }
+  return '';
+}
+
 // List pages (absences, exams, homework) embed their grid as a JS object
 // literal: `gridDataAndConfiguration:{...}`. The object itself is valid JSON,
 // so find its matching closing brace and parse it.
@@ -73,8 +84,28 @@ export function mapTimetable(lessons) {
     .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start));
 }
 
-// A course's rows are its grades plus trailing summary rows without a date,
-// e.g. "Schnitt" (the intranet's own average) and "Zeugnisnote".
+const toNumber = (v) => parseFloat(String(v).replace(',', '.').replace(/[−–]/, '-'));
+
+// Weighted average of the grades that count, plus any bonus/malus. Teachers
+// name those rows freely, but grades are 1 to 6, so a summary row below 1 can
+// only be a bonus or malus. Unsigned values like "0.1" count as a bonus.
+function courseAverage(grades, summary) {
+  let sum = 0;
+  let weights = 0;
+  for (const g of grades) {
+    const value = toNumber(g.value);
+    const weight = toNumber(g.weight ?? 1);
+    if (g.struck || !(value > 0) || !(weight > 0)) continue;
+    sum += value * weight;
+    weights += weight;
+  }
+  if (!weights) return null;
+  const bonus = summary.map((s) => toNumber(s.value)).filter((v) => Math.abs(v) < 1).reduce((a, b) => a + b, 0);
+  return Math.round(Math.min(6, Math.max(1, sum / weights + bonus)) * 1000) / 1000;
+}
+
+// A course's rows are its grades plus trailing summary rows without a date:
+// whatever the teacher adds, e.g. a "Schnitt", a "Zeugnisnote" or a bonus.
 export function mapCourseGrades(rows) {
   const grades = [];
   const summary = [];
@@ -91,6 +122,5 @@ export function mapCourseGrades(rows) {
       });
     }
   }
-  const avg = summary.find((s) => s.title === 'Schnitt')?.value;
-  return { grades, summary, average: avg == null ? null : parseFloat(avg) };
+  return { grades, summary, average: courseAverage(grades, summary) };
 }

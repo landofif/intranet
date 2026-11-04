@@ -114,3 +114,85 @@ test('wrong password fails once, then stops trying', async () => {
   assert.match((await again.json()).error, /login 200, gradebook 200, login page.*waiting/);
   assert.equal(state.loginPosts.length, 1, 'no second login attempt during cooldown');
 });
+
+// A login the intranet redirects without ever letting the session in: the error
+// shows what the redirect page says, since the 302 itself carries no reason.
+function refusedLogin(redirectPage, location = '/kzn/') {
+  const seen = [];
+  async function fetchFn(url, init = {}) {
+    const { pathname, origin } = new URL(url);
+    seen.push(`${origin}${pathname}`);
+    if (pathname === '/kzn' && init.method !== 'POST') return new Response(fx.loginPage);
+    if (pathname === '/kzn') return new Response(null, { status: 302, headers: { location } });
+    if (pathname === '/kzn/gradebook') return new Response(null, { status: 302, headers: { location: '/kzn' } });
+    if (redirectPage instanceof Error) throw redirectPage;
+    return new Response(redirectPage);
+  }
+  return { fetchFn, seen };
+}
+
+test('a refused login reports what the redirect page shows', async () => {
+  const { fetchFn } = refusedLogin(
+    `${fx.loginPage}<div class="alert alert-danger"><p>Zu viele  Anmeldungen</p></div><img src="captcha.png">`,
+  );
+  const error = (await (await get(createHandler(fetchFn), '/grades')).json()).error;
+  assert.match(
+    error,
+    /login 302 → \/kzn\/, after redirect 200, login form, captcha, "Zu viele Anmeldungen", gradebook 302 → \/kzn\)/,
+  );
+});
+
+test('the redirect check never reports text from a logged-in page', async () => {
+  const { fetchFn } = refusedLogin('<a href="/kzn/logout">x</a><div class="alert">Hallo Vorname Nachname</div>');
+  const error = (await (await get(createHandler(fetchFn), '/grades')).json()).error;
+  assert.match(error, /after redirect 200, logged in, gradebook 302/);
+  assert.doesNotMatch(error, /Nachname/);
+});
+
+test('the redirect check stays on the intranet', async () => {
+  const { fetchFn, seen } = refusedLogin(fx.loginPage, 'https://login.example/x');
+  const error = (await (await get(createHandler(fetchFn), '/grades')).json()).error;
+  assert.match(error, /login 302 → https:\/\/login\.example\/x, gradebook 302 → \/kzn\)/);
+  assert.ok(!seen.some((u) => u.includes('login.example')), 'cookies stay away from other sites');
+});
+
+test('a failing redirect check keeps the login error', async () => {
+  const { fetchFn } = refusedLogin(new Error('network down'));
+  const res = await get(createHandler(fetchFn), '/grades');
+  assert.equal(res.status, 502);
+  assert.match((await res.json()).error, /login 302 → \/kzn\/, after redirect failed, gradebook 302 → \/kzn\)/);
+});
+
+// Seen on the real intranet: the gradebook refused the session until the page
+// the login redirects to had been opened.
+test('login opens the redirect page before using the session', async () => {
+  let opened = false;
+  const fetchFn = async (url, init = {}) => {
+    const { pathname } = new URL(url);
+    if (pathname === '/kzn' && init.method !== 'POST') return new Response(fx.loginPage);
+    if (pathname === '/kzn') return new Response(null, { status: 302, headers: { location: '/kzn/' } });
+    if (pathname === '/kzn/') {
+      opened = true;
+      return new Response(fx.loginPage);
+    }
+    if (!opened) return new Response(null, { status: 302, headers: { location: '/kzn' } });
+    if (pathname === '/kzn/gradebook') return new Response(fx.gradebookPage);
+    return Response.json({ status: 1, data: fx.lessons });
+  };
+  const res = await get(createHandler(fetchFn), '/timetable?from=1&to=2');
+  assert.equal(res.status, 200);
+});
+
+test('a session refused right after login gives a readable error', async () => {
+  const fetchFn = async (url, init = {}) => {
+    const { pathname } = new URL(url);
+    if (pathname === '/kzn' && init.method !== 'POST') return new Response(fx.loginPage);
+    if (pathname === '/kzn') return new Response(null, { status: 302, headers: { location: '/kzn/' } });
+    if (pathname === '/kzn/') return new Response(fx.loginPage);
+    if (pathname === '/kzn/gradebook') return new Response(fx.gradebookPage);
+    return new Response(null, { status: 302, headers: { location: '/kzn' } });
+  };
+  const res = await get(createHandler(fetchFn), '/timetable?from=1&to=2');
+  assert.equal(res.status, 500);
+  assert.match((await res.json()).error, /session/i);
+});

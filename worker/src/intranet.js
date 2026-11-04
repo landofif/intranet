@@ -5,6 +5,7 @@ import {
   extractCsrf,
   extractHash,
   extractListGrid,
+  extractNotice,
   extractStudentId,
   isLoginPage,
 } from './parse.js';
@@ -16,7 +17,11 @@ const SCHOOL = 'kzn';
 const LOGIN_COOLDOWN_MS = 15 * 60 * 1000;
 
 export class LoginError extends Error {}
-class SessionExpired extends Error {}
+class SessionExpired extends Error {
+  message = 'The intranet refused the session right after logging in.';
+}
+
+const answer = (r) => `${r.status}${r.headers.get('location') ? ` → ${r.headers.get('location')}` : ''}`;
 
 export class Intranet {
   constructor(env, fetchFn) {
@@ -68,6 +73,7 @@ export class Intranet {
     });
     this.storeCookies(cookies, res);
     const postHtml = await res.text();
+    const redirect = res.headers.get('location') ? await this.openRedirect(res.headers.get('location'), cookies) : [];
 
     // The gradebook page carries both the CSRF token and the student id.
     const gb = await this.fetch(`${BASE}/${SCHOOL}/gradebook`, {
@@ -81,14 +87,40 @@ export class Intranet {
       this.loginFailedAt = Date.now();
       // Say what the intranet answered (no secrets or page content), so a
       // rejected password can be told apart from a later step going wrong.
-      const answer = (r) => `${r.status}${r.headers.get('location') ? ` → ${r.headers.get('location')}` : ''}`;
-      const detail = [`login ${answer(res)}`, `gradebook ${answer(gb)}`];
+      const detail = [`login ${answer(res)}`, ...redirect, `gradebook ${answer(gb)}`];
       if (isLoginPage(html)) detail.push('login page');
       if (/captcha/i.test(postHtml)) detail.push('captcha');
-      this.loginFailure = `Login failed (${detail.join(', ')}). Check KZN_USER and KZN_PASSWORD.`;
+      this.loginFailure = `Login failed (${detail.join(', ')}).`;
       throw new LoginError(this.loginFailure);
     }
     this.session = { cookies, csrf, studentId };
+  }
+
+  // Opens the page the login redirects to, as a browser would: the gradebook
+  // has refused the session until this happened. Returns what the page shows
+  // for the error of a failed login, as the redirect itself carries no reason.
+  // Stays on the intranet, as the cookies go along, and reports no text from a
+  // logged-in page.
+  async openRedirect(location, cookies) {
+    const url = new URL(location, `${BASE}/`);
+    if (url.origin !== BASE) return [];
+    try {
+      const page = await this.fetch(url.href, { redirect: 'manual', headers: { cookie: this.cookieHeader(cookies) } });
+      this.storeCookies(cookies, page);
+      const html = await page.text();
+      const facts = [`after redirect ${answer(page)}`];
+      if (/logout|abmelden/i.test(html)) {
+        facts.push('logged in');
+      } else {
+        if (isLoginPage(html)) facts.push('login form');
+        if (/captcha/i.test(html)) facts.push('captcha');
+        const notice = extractNotice(html);
+        if (notice) facts.push(`"${notice}"`);
+      }
+      return facts;
+    } catch {
+      return ['after redirect failed'];
+    }
   }
 
   // Concurrent requests share one login instead of each starting their own.
