@@ -1,7 +1,7 @@
 # kzn-intranet docs
 
 ## What it does
-Opens on this week's timetable (today selected, swipe or tap days, ‹ › for weeks). Lessons show abbreviated subjects from `SUBJECT_SHORT` in `app.js`; a subject not listed there shows its full name. Tabs for grades (intranet's own average per course), absences, exams and homework. ⚙ has the Worker URL + key and the theme (Automatisch follows the device, Hell, Dunkel; stored in `localStorage` as `kzn-theme`).
+Opens on this week's timetable (today selected, swipe or tap days, ‹ › for weeks). Lessons show abbreviated subjects from `SUBJECT_SHORT` in `app.js`; a subject not listed there shows its full name. A room change makes the lesson's card yellow and a cancelled lesson's card red, with no extra label; any other lesson type shows its code as a badge. A free time of 30 min or more (`LONG_BREAK_MIN`), like lunch, leaves a gap before the next lesson. The lesson running now gets a blue tint and bar (a room change stays yellow with the bar); `markNow` updates this every minute and on reopening. Tabs for grades (intranet's own average per course), absences, exams and homework. ⚙ has the Worker URL + key and the theme (Automatisch follows the device, Hell, Dunkel; stored in `localStorage` as `kzn-theme`).
 
 ## Why a Worker
 intranet.tam.ch sends no CORS headers, so a GitHub Pages site can't read it directly. The Worker (`worker/src/index.js`) holds the login and proxies.

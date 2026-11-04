@@ -4,7 +4,8 @@ const main = $('#main');
 const DAY_MS = 864e5;
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const LISTS = { absences: 'Absenzen', exams: 'Prüfungen', homework: 'Hausaufgaben' };
-const BADGES = { cancel: 'Ausfall', rmchg: 'Zimmerwechsel' };
+// These only colour the card (style.css); any other type shows its code as a badge.
+const COLOURED = ['lesson', 'cancel', 'rmchg'];
 // Timetable names; a subject not listed here keeps its full name.
 const SUBJECT_SHORT = {
   'Bildnerisches Gestalten': 'BG',
@@ -147,27 +148,45 @@ function renderDays(start, lessons) {
   $('#days').innerHTML = html;
 }
 
-function renderDay(lessons) {
-  if (!lessons.length) return render('<div class="empty">Keine Lektionen</div>');
+// 09:45 -> 9:45
+const shortTime = (t) => t.replace(/^0/, '');
+const minutes = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+// A free time at least this long (lunch, a free lesson) leaves a gap in the day.
+const LONG_BREAK_MIN = 30;
+
+// Runs again on a timer and on reopening: the home-screen app can stay open for days.
+function markNow() {
   const now = new Date();
   const nowIso = isoDate(now);
   const nowTime = now.toTimeString().slice(0, 5);
+  document.querySelectorAll('.lesson:not(.cancel)').forEach((card) => {
+    const { date, start, end } = card.dataset;
+    card.classList.toggle('now', date === nowIso && start <= nowTime && nowTime < end);
+  });
+}
+setInterval(markNow, 60_000);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) markNow();
+});
+
+function renderDay(lessons) {
+  if (!lessons.length) return render('<div class="empty">Keine Lektionen</div>');
   render(
     lessons
-      .map((l) => {
-        const isNow = l.date === nowIso && l.start <= nowTime && nowTime < l.end && l.type !== 'cancel';
-        const badge = l.type === 'lesson' ? '' : `<span class="badge">${esc(BADGES[l.type] || l.type)}</span>`;
-        const room = l.type === 'rmchg' ? `<span class="changed">${esc(l.room)}</span>` : esc(l.room);
-        return `<div class="card lesson ${esc(l.type)}${isNow ? ' now' : ''}">
-          <div class="time"><b>${l.start}</b>${l.end}</div>
+      .map((l, i) => {
+        const afterBreak = i > 0 && minutes(l.start) - minutes(lessons[i - 1].end) >= LONG_BREAK_MIN;
+        const badge = COLOURED.includes(l.type) ? '' : `<span class="badge">${esc(l.type)}</span>`;
+        const details = [esc(l.room), esc(l.teacher), esc(l.message)].filter(Boolean).map((d) => ` · ${d}`).join('');
+        return `<div class="card lesson ${esc(l.type)}${afterBreak ? ' after-break' : ''}" data-date="${esc(l.date)}" data-start="${esc(l.start)}" data-end="${esc(l.end)}">
           <div class="what">
-            <div class="subject">${esc(SUBJECT_SHORT[l.subject] ?? l.subject)}</div>
-            <div class="meta">${room}${l.teacher ? ' · ' + esc(l.teacher) : ''}${l.message ? ' · ' + esc(l.message) : ''}</div>
+            <span class="time">${shortTime(l.start)} - ${shortTime(l.end)}</span>
+            <span class="subject">${esc(SUBJECT_SHORT[l.subject] ?? l.subject)}</span><span class="meta">${details}</span>
           </div>${badge}
         </div>`;
       })
       .join(''),
   );
+  markNow();
 }
 
 // ---- grades ----

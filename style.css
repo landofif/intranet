@@ -10,6 +10,8 @@
   --warn: #c2410c;
   --warn-soft: #fdeadf;
   --bad: #b42318;
+  --bad-soft: #fcdcdc;
+  --yellow-soft: #fdf0b8;
   --good: #1e7a46;
 }
 /* Dark follows the device, unless Einstellungen picks Hell or Dunkel. */
@@ -26,6 +28,8 @@
     --warn: #fb923c;
     --warn-soft: #3a2518;
     --bad: #f87171;
+    --bad-soft: #451f1f;
+    --yellow-soft: #3d3410;
     --good: #4ade80;
   }
 }
@@ -41,6 +45,8 @@
   --warn: #fb923c;
   --warn-soft: #3a2518;
   --bad: #f87171;
+  --bad-soft: #451f1f;
+  --yellow-soft: #3d3410;
   --good: #4ade80;
 }
 
@@ -99,13 +105,16 @@ main {
   margin-bottom: 8px;
 }
 .lesson { display: flex; gap: 12px; align-items: center; }
-.lesson .time { width: 48px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.lesson .time b { display: block; color: var(--text); font-size: 15px; font-weight: 600; }
-.lesson .what { flex: 1; min-width: 0; }
+.lesson.after-break { margin-top: 28px; }
+.lesson .what { flex: 1; min-width: 0; font-size: 15px; }
+/* Fixed width so the subjects line up when a time has no leading digit. */
+.lesson .time { display: inline-block; min-width: 108px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .lesson .subject { font-weight: 600; }
-.lesson .meta { color: var(--muted); font-size: 14px; }
+.lesson .meta { color: var(--muted); }
 .lesson.now { box-shadow: inset 3px 0 0 var(--accent); background: var(--accent-soft); }
-.lesson.cancel .subject, .lesson.cancel .meta { text-decoration: line-through; opacity: 0.55; }
+.lesson.rmchg { background: var(--yellow-soft); }
+.lesson.cancel { background: var(--bad-soft); }
+.lesson.cancel .subject, .lesson.cancel .meta { text-decoration: line-through; }
 .badge {
   font-size: 12px;
   font-weight: 600;
@@ -115,7 +124,6 @@ main {
   color: var(--warn);
   white-space: nowrap;
 }
-.changed { color: var(--warn); font-weight: 600; }
 
 .course summary { display: flex; align-items: center; gap: 10px; list-style: none; cursor: pointer; }
 .course summary::-webkit-details-marker { display: none; }
