@@ -1,7 +1,7 @@
 # kzn-intranet docs
 
 ## What it does
-Opens on this week's timetable (today selected, swipe or tap days, ‹ › for weeks). Tabs for grades (intranet's own average per course), absences, exams and homework.
+Opens on this week's timetable (today selected, swipe or tap days, ‹ › for weeks). Tabs for grades (intranet's own average per course), absences, exams and homework. ⚙ has the Worker URL + key and the theme (Automatisch follows the device, Hell, Dunkel; stored in `localStorage` as `kzn-theme`).
 
 ## Why a Worker
 intranet.tam.ch sends no CORS headers, so a GitHub Pages site can't read it directly. The Worker (`worker/src/index.js`) holds the login and proxies.

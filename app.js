@@ -5,6 +5,8 @@ const DAY_MS = 864e5;
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const LISTS = { absences: 'Absenzen', exams: 'Prüfungen', homework: 'Hausaufgaben' };
 const BADGES = { cancel: 'Ausfall', rmchg: 'Zimmerwechsel' };
+const THEMES = { auto: 'Automatisch', light: 'Hell', dark: 'Dunkel' };
+const THEME_COLORS = { light: '#f4f5f8', dark: '#111318' };
 
 // Browser storage can throw (private mode, blocked site data); fall back to null.
 function loadConfig() {
@@ -12,6 +14,20 @@ function loadConfig() {
 }
 function saveConfig(c) {
   try { localStorage.setItem('kzn-config', JSON.stringify(c)); } catch {}
+}
+function loadTheme() {
+  try { return localStorage.getItem('kzn-theme') || 'auto'; } catch { return 'auto'; }
+}
+function saveTheme(t) {
+  try { localStorage.setItem('kzn-theme', t); } catch {}
+}
+function applyTheme(t) {
+  if (t === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+  // The status bar color follows these, each tagged light or dark for the device setting.
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+    m.content = THEME_COLORS[t] ?? THEME_COLORS[m.media.includes('dark') ? 'dark' : 'light'];
+  });
 }
 
 let config = loadConfig();
@@ -204,7 +220,23 @@ function showSettings() {
     <label for="key">App-Schlüssel</label>
     <input id="key" type="password" required autocomplete="off" value="${esc(config?.key)}">
     <button class="save">Speichern</button>
+    <label id="theme-label">Darstellung</label>
+    <div class="theme" role="group" aria-labelledby="theme-label">${Object.entries(THEMES)
+      .map(([t, name]) => `<button type="button" data-theme-choice="${t}">${name}</button>`)
+      .join('')}</div>
   </form>`);
+  const choices = main.querySelectorAll('[data-theme-choice]');
+  const markTheme = (t) => choices.forEach((b) => {
+    b.classList.toggle('active', b.dataset.themeChoice === t);
+    b.setAttribute('aria-pressed', b.dataset.themeChoice === t);
+  });
+  markTheme(loadTheme());
+  choices.forEach((b) => b.addEventListener('click', () => {
+    const t = b.dataset.themeChoice;
+    saveTheme(t);
+    applyTheme(t);
+    markTheme(t);
+  }));
   $('#cfg').addEventListener('submit', (e) => {
     e.preventDefault();
     config = { url: $('#url').value.trim(), key: $('#key').value.trim() };
@@ -256,4 +288,5 @@ main.addEventListener('touchend', (e) => {
   if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) moveDay(dx < 0 ? 1 : -1);
 });
 
+applyTheme(loadTheme());
 show('timetable');

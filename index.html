@@ -14,6 +14,8 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="style.css">
+  <!-- Set before the first paint, so a chosen theme doesn't flash the other one. -->
+  <script>try { const t = localStorage.getItem('kzn-theme'); if (t) document.documentElement.dataset.theme = t; } catch {}</script>
 </head>
 <body>
   <header>

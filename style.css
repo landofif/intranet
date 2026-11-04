@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --bg: #f4f5f8;
   --card: #ffffff;
   --text: #16181d;
@@ -11,8 +12,10 @@
   --bad: #b42318;
   --good: #1e7a46;
 }
+/* Dark follows the device, unless Einstellungen picks Hell or Dunkel. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --bg: #111318;
     --card: #1b1e25;
     --text: #eceef2;
@@ -25,6 +28,20 @@
     --bad: #f87171;
     --good: #4ade80;
   }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111318;
+  --card: #1b1e25;
+  --text: #eceef2;
+  --muted: #9399a6;
+  --line: #2a2e37;
+  --accent: #7aa7ff;
+  --accent-soft: #1f2b44;
+  --warn: #fb923c;
+  --warn-soft: #3a2518;
+  --bad: #f87171;
+  --good: #4ade80;
 }
 
 * { box-sizing: border-box; }
@@ -145,6 +162,16 @@ form .save {
   color: #fff;
   font-weight: 600;
 }
+.theme {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+.theme button { flex: 1; padding: 8px 0; border-radius: 8px; font-size: 14px; color: var(--muted); }
+.theme button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 
 #tabs {
   display: flex;
